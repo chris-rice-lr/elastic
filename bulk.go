@@ -195,7 +195,17 @@ func (s *BulkService) Do(ctx context.Context) (*BulkResponse, error) {
 		return nil, errors.New("elastic: No bulk actions to commit")
 	}
 
-	fmt.Println("DOIN THE DO METHOD IN BULKSERVICE")
+	fmt.Printf("DOIN THE DO METHOD IN BULKSERVICE. NUMBER OF REQUESTS: %d", len(s.requests))
+	for i, req := range s.requests {
+		src, err := req.Source()
+		if err != nil {
+			fmt.Errorf("error getting source")
+		}
+
+		body := src[0]
+		fmt.Printf("=== REQUEST BODY %d: %v\n", i, body)
+	}
+	fmt.Println()
 
 	// Get body
 	body, err := s.bodyAsString()
