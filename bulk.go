@@ -171,8 +171,7 @@ func (s *BulkService) bodyAsString() (string, error) {
 	// Pre-allocate to reduce allocs
 	buf := bytes.NewBuffer(make([]byte, 0, s.EstimatedSizeInBytes()))
 
-	for i, req := range s.requests {
-		fmt.Printf("=== REQUEST %d: %v\n", i, req.String())
+	for _, req := range s.requests {
 		source, err := req.Source()
 		if err != nil {
 			return "", err
