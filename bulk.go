@@ -172,6 +172,7 @@ func (s *BulkService) bodyAsString() (string, error) {
 	buf := bytes.NewBuffer(make([]byte, 0, s.EstimatedSizeInBytes()))
 
 	for _, req := range s.requests {
+		fmt.Println(req.String())
 		source, err := req.Source()
 		if err != nil {
 			return "", err
