@@ -200,6 +200,9 @@ func (s *BulkService) Do(ctx context.Context) (*BulkResponse, error) {
 		return nil, err
 	}
 
+	s.index = "logs-2018-09-01"
+	s.typ = "logs"
+
 	// Build url
 	path := "/"
 	if len(s.index) > 0 {
