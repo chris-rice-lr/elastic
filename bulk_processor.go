@@ -236,7 +236,7 @@ type BulkProcessor struct {
 	bulkSize      int
 	numWorkers    int
 	executionId   int64
-	requestsC     chan BulkableRequest
+	requestsC     [8]chan BulkableRequest
 	workerWg      sync.WaitGroup
 	workers       []*bulkWorker
 	flushInterval time.Duration
@@ -293,7 +293,10 @@ func (p *BulkProcessor) Start(ctx context.Context) error {
 		p.numWorkers = 1
 	}
 
-	p.requestsC = make(chan BulkableRequest)
+	for i := range p.requestsC {
+		p.requestsC[i] = make(chan BulkableRequest)
+	}
+
 	p.executionId = 0
 	p.stats = newBulkProcessorStats(p.numWorkers)
 	p.stopReconnC = make(chan struct{})
@@ -350,7 +353,9 @@ func (p *BulkProcessor) Close() error {
 	}
 
 	// Stop all workers.
-	close(p.requestsC)
+	for i := range p.requestsC {
+		close(p.requestsC[i])
+	}
 	p.workerWg.Wait()
 
 	p.started = false
@@ -371,7 +376,26 @@ func (p *BulkProcessor) Stats() BulkProcessorStats {
 //
 // The caller is responsible for setting the index and type on the request.
 func (p *BulkProcessor) Add(request BulkableRequest) {
-	p.requestsC <- request
+	r := request.(*BulkIndexRequest)
+	switch r.index {
+	case "logs-2018-09-01":
+		p.requestsC[0] <- request
+	case "logs-2018-09-02":
+		p.requestsC[1] <- request
+	case "logs-2018-09-03":
+		p.requestsC[2] <- request
+	case "logs-2018-09-04":
+		p.requestsC[3] <- request
+	case "logs-2018-09-05":
+		p.requestsC[4] <- request
+	case "logs-2018-09-06":
+		p.requestsC[5] <- request
+	case "logs-2018-09-07":
+		p.requestsC[6] <- request
+	case "logs-2018-09-08":
+		p.requestsC[7] <- request
+	}
+
 }
 
 // Flush manually asks all workers to commit their outstanding requests.
@@ -448,7 +472,7 @@ func (w *bulkWorker) work(ctx context.Context) {
 	for !stop {
 		var err error
 		select {
-		case req, open := <-w.p.requestsC:
+		case req, open := <-w.p.requestsC[w.i]:
 			if open {
 				// Received a new request
 				w.service.Add(req)
